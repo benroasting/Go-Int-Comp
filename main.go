@@ -25,6 +25,9 @@ func main() {
 		if l.HadError {
 			os.Exit(65)
 		}
+		if l.HadRuntimeError {
+			os.Exit(70)
+		}
 	} else {
 		scanner := bufio.NewScanner(os.Stdin)
 		for {
@@ -34,6 +37,7 @@ func main() {
 			}
 			l.Run(scanner.Text())
 			l.HadError = false
+			l.HadRuntimeError = false
 		}
 	}
 }

@@ -6,7 +6,8 @@ import (
 )
 
 type Lox struct {
-	HadError bool
+	HadError 		bool
+	HadRuntimeError bool
 }
 
 func (l *Lox) Run(source string){
@@ -19,7 +20,8 @@ func (l *Lox) Run(source string){
 		return
 	}
 
-	fmt.Println(AstString(expr))
+	interpreter := NewInterpreter(l)
+	interpreter.Interpret(expr)
 }
 
 func (l *Lox) Error(line int, message string){
@@ -32,6 +34,11 @@ func (l *Lox) TokenError(t Token, message string) {
 	} else {
 		l.report(t.Line, " at '"+t.Lexeme+"'", message)
 	}
+}
+
+func (l *Lox) RuntimeError(err runtimeError) {
+	fmt.Fprintf(os.Stderr, "%s\n[line %d]\n", err.message, err.token.Line)
+	l.HadRuntimeError = true
 }
 
 func (l *Lox) report(line int, where, message string){
