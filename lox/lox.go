@@ -6,25 +6,28 @@ import (
 )
 
 type Lox struct {
-	HadError 		bool
+	HadError        bool
 	HadRuntimeError bool
+	interpreter     *Interpreter
 }
 
-func (l *Lox) Run(source string){
+func (l *Lox) Run(source string) {
 	scanner := NewScanner(source, l)
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens, l)
-	expr := parser.Parse()
+	stmts := parser.Parse()
 
 	if l.HadError {
 		return
 	}
 
-	interpreter := NewInterpreter(l)
-	interpreter.Interpret(expr)
+	if l.interpreter == nil {
+		l.interpreter = NewInterpreter(l)
+	}
+	l.interpreter.Interpret(stmts)
 }
 
-func (l *Lox) Error(line int, message string){
+func (l *Lox) Error(line int, message string) {
 	l.report(line, "", message)
 }
 
@@ -41,7 +44,7 @@ func (l *Lox) RuntimeError(err runtimeError) {
 	l.HadRuntimeError = true
 }
 
-func (l *Lox) report(line int, where, message string){
+func (l *Lox) report(line int, where, message string) {
 	fmt.Fprintf(os.Stderr, "[line %d] Error%s: %s\n", line, where, message)
 	l.HadError = true
 }

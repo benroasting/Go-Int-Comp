@@ -24,14 +24,14 @@ const (
 	Greater
 	GreaterEqual
 	Less
-	LessEqual 
+	LessEqual
 	// Literals
 	Identifier
 	String
 	Number
 	// Keywords
 	And
-	Class 
+	Class
 	Else
 	False
 	Fun
@@ -51,8 +51,8 @@ const (
 )
 
 type Token struct {
-	Type TokenType
-	Lexeme string
+	Type    TokenType
+	Lexeme  string
 	Literal any
-	Line int
+	Line    int
 }

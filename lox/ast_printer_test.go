@@ -6,7 +6,7 @@ func TestAstString(t *testing.T) {
 	expr := &Binary{
 		Left: &Unary{
 			Operator: Token{Type: Minus, Lexeme: "-", Line: 1},
-			Right: 	  &Literal{Value: 123.0},
+			Right:    &Literal{Value: 123.0},
 		},
 		Operator: Token{Type: Star, Lexeme: "*", Line: 1},
 		Right: &Grouping{

@@ -3,19 +3,23 @@ package lox
 import "fmt"
 
 type Interpreter struct {
-	lox *Lox
+	lox         *Lox
+	environment *Environment
 }
 
 type runtimeError struct {
-	token 	Token
+	token   Token
 	message string
 }
 
 func NewInterpreter(l *Lox) *Interpreter {
-	return &Interpreter{lox: l}
+	return &Interpreter{
+		lox:         l,
+		environment: NewEnvironment(),
+	}
 }
 
-func (i *Interpreter) Interpret(e Expr) {
+func (i *Interpreter) Interpret(stmts []Stmt) {
 	defer func() {
 		if r := recover(); r != nil {
 			if rerr, ok := r.(runtimeError); ok {
@@ -25,8 +29,25 @@ func (i *Interpreter) Interpret(e Expr) {
 			}
 		}
 	}()
-	value := i.evaluate(e)
-	fmt.Println(stringify(value))
+	for _, s := range stmts {
+		i.execute(s)
+	}
+}
+
+func (i *Interpreter) execute(s Stmt) {
+	switch s := s.(type) {
+	case *ExpressionStmt:
+		i.evaluate(s.Expression)
+	case *PrintStmt:
+		value := i.evaluate(s.Expression)
+		fmt.Println(stringify(value))
+	case *VarStmt:
+		var value any
+		if s.Initializer != nil {
+			value = i.evaluate(s.Initializer)
+		}
+		i.environment.Define(s.Name.Lexeme, value)
+	}
 }
 
 func (i *Interpreter) evaluate(e Expr) any {
@@ -71,7 +92,7 @@ func (i *Interpreter) evaluate(e Expr) any {
 				}
 			}
 			panic(runtimeError{
-				token: 	e.Operator,
+				token:   e.Operator,
 				message: "Operands must be two numbers or two strings.",
 			})
 		case Greater:
@@ -80,7 +101,7 @@ func (i *Interpreter) evaluate(e Expr) any {
 		case GreaterEqual:
 			checkNumberOperands(e.Operator, left, right)
 			return left.(float64) >= right.(float64)
-		case Less: 
+		case Less:
 			checkNumberOperands(e.Operator, left, right)
 			return left.(float64) < right.(float64)
 		case LessEqual:
@@ -89,11 +110,17 @@ func (i *Interpreter) evaluate(e Expr) any {
 		case BangEqual:
 			return !isEqual(left, right)
 		case EqualEqual:
-        	return isEqual(left, right)
+			return isEqual(left, right)
 		}
 		panic("unreachable")
+	case *Variable:
+		return i.environment.Get(e.Name)
+	case *Assign:
+		value := i.evaluate(e.Value)
+		i.environment.Assign(e.Name, value)
+		return value
 	}
-	return nil // placeholder - add Unary and Binary later
+	return nil
 }
 
 func stringify(v any) string {
@@ -104,7 +131,7 @@ func stringify(v any) string {
 }
 
 func isEqual(a, b any) bool {
-    return a == b
+	return a == b
 }
 
 func isTruthy(v any) bool {
@@ -118,13 +145,13 @@ func isTruthy(v any) bool {
 }
 
 func checkNumberOperand(operator Token, operand any) {
-	 if _, ok := operand.(float64); ok {
+	if _, ok := operand.(float64); ok {
 		return
-	 }
-	 panic(runtimeError{token: operator, message: "Operand must be a number."})
+	}
+	panic(runtimeError{token: operator, message: "Operand must be a number."})
 }
 
-func checkNumberOperands(operator Token, left, right any){
+func checkNumberOperands(operator Token, left, right any) {
 	_, lok := left.(float64)
 	_, rok := right.(float64)
 	if lok && rok {

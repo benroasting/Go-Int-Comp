@@ -4,6 +4,12 @@ type Expr interface {
 	exprNode()
 }
 
+type Variable struct {
+	Name Token
+}
+
+func (*Variable) exprNode() {}
+
 type Binary struct {
 	Left     Expr
 	Operator Token
@@ -30,3 +36,10 @@ type Unary struct {
 }
 
 func (*Unary) exprNode() {}
+
+type Assign struct {
+	Name  Token
+	Value Expr
+}
+
+func (*Assign) exprNode() {}
