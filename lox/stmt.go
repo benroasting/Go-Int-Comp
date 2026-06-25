@@ -22,3 +22,9 @@ type VarStmt struct {
 }
 
 func (*VarStmt) stmtNode() {}
+
+type BlockStmt struct {
+	Statements 	[]Stmt
+}
+
+func (*BlockStmt) stmtNode() {}
