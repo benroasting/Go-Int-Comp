@@ -40,6 +40,7 @@ func (e *Environment) Assign(name Token, value any) {
 	}
 	if e.enclosing != nil {
 		e.enclosing.Assign(name, value)
+		return
 	}
 	panic(runtimeError{
 		token:   name,

@@ -47,6 +47,18 @@ func (i *Interpreter) execute(s Stmt) {
 			value = i.evaluate(s.Initializer)
 		}
 		i.environment.Define(s.Name.Lexeme, value)
+	case *BlockStmt:
+		i.executeBlock(s.Statements, NewChildEnvironment(i.environment))
+		
+	}
+}
+
+func (i *Interpreter) executeBlock(stmts []Stmt, env *Environment) {
+	previous := i.environment
+	defer func() { i.environment = previous }()
+	i.environment = env
+	for _, s := range stmts {
+		i.execute(s)
 	}
 }
 
