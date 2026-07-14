@@ -43,3 +43,11 @@ type Assign struct {
 }
 
 func (*Assign) exprNode() {}
+
+type Logical struct {
+	Left 		Expr
+	Operator	Token
+	Right 		Expr
+}
+
+func (*Logical) exprNode() {}

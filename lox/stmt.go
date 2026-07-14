@@ -28,3 +28,18 @@ type BlockStmt struct {
 }
 
 func (*BlockStmt) stmtNode() {}
+
+type IfStmt struct {
+	Condition 	Expr
+	ThenBranch	Stmt
+	ElseBranch 	Stmt
+}
+
+func (*IfStmt) stmtNode() {}
+
+type WhileStmt struct {
+	Condition 	Expr
+	Body		Stmt
+}
+
+func (*WhileStmt) stmtNode() {}

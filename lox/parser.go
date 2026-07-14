@@ -61,6 +61,15 @@ func (p *Parser) varDeclaration() Stmt {
 
 // statements
 func (p *Parser) statement() Stmt {
+	if p.match(If) {
+		return p.ifStatement()
+	}
+	if p.match(For) {
+		return p.forStatement()
+	}
+	if p.match(While) {
+		return p.whileStatement()
+	}
 	if p.match(Print) {
 		return p.printStatement()
 	}
@@ -100,7 +109,7 @@ func (p *Parser) expression() Expr {
 }
 
 func (p *Parser) assignment() Expr {
-	expr := p.equality()
+	expr := p.or()
 
 	if p.match(Equal) {
 		equals := p.previous()
@@ -113,6 +122,26 @@ func (p *Parser) assignment() Expr {
 		p.parseError(equals, "Invalid assignment target.")
 	}
 
+	return expr
+}
+
+func (p *Parser) or() Expr {
+	expr := p.and()
+	for p.match(Or) {
+		operator := p.previous()
+		right := p.and()
+		expr = &Logical{Left: expr, Operator: operator, Right: right}
+	}
+	return expr
+}
+
+func (p *Parser) and() Expr {
+	expr := p.equality()
+	for p.match(And) {
+		operator := p.previous()
+		right := p.equality()
+		expr = &Logical{Left: expr, Operator: operator, Right: right}
+	}
 	return expr
 }
 
@@ -257,4 +286,75 @@ func (p *Parser) synchronize() {
 		}
 		p.advance()
 	}
+}
+
+func (p *Parser) ifStatement() Stmt {
+	p.consume(LeftParen, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(RightParen, "Expect ')' after if condition.")
+
+	thenBranch := p.statement()
+	var elseBranch Stmt
+	if p.match(Else) {
+		elseBranch =p.statement()
+	}
+
+	return &IfStmt{
+		Condition: condition,
+		ThenBranch: thenBranch,
+		ElseBranch: elseBranch,
+	}
+}
+
+func (p *Parser) forStatement() Stmt {
+	p.consume(LeftParen, "Expect '(' after 'for'.")
+
+	var initializer Stmt
+	if p.match(Semicolon) {
+		initializer = nil
+	} else if p.match(Var) {
+		initializer = p.varDeclaration()
+	} else {
+		initializer = p.expressionStatement()
+	}
+
+	var condition Expr
+	if !p.check(RightParen) {
+		condition = p.expression()
+	}
+	p.consume(Semicolon, "Expect ';' after loop condition.")
+
+	var increment Expr
+	if !p.check(RightParen) {
+		increment = p.expression()
+	}
+	p.consume(RightParen, "Expect ')' after for clauses.")
+
+	body := p.statement()
+
+	if increment != nil {
+		body = &BlockStmt{Statements: []Stmt{
+			body,
+			&ExpressionStmt{Expression: increment},
+		}}
+	}
+
+	if condition == nil {
+		condition = &Literal{Value: true}
+	}
+	body = &WhileStmt{Condition: condition, Body: body}
+
+	if initializer != nil {
+		body = &BlockStmt{Statements: []Stmt{initializer, body}}
+	}
+
+	return body
+}
+
+func (p *Parser) whileStatement() Stmt {
+	p.consume(LeftParen, "Expect '(' after 'while'.")
+	condition := p.expression()
+	p.consume(RightParen, "Expect ')' after 'while'.")
+	body := p.statement()
+	return &WhileStmt{Condition: condition, Body: body}
 }

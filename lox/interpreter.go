@@ -49,7 +49,16 @@ func (i *Interpreter) execute(s Stmt) {
 		i.environment.Define(s.Name.Lexeme, value)
 	case *BlockStmt:
 		i.executeBlock(s.Statements, NewChildEnvironment(i.environment))
-		
+	case *IfStmt:
+		if isTruthy(i.evaluate(s.Condition)) {
+			i.execute(s.ThenBranch)
+		} else if s.ElseBranch != nil {
+			i.execute(s.ElseBranch)
+		}
+	case *WhileStmt:
+		for isTruthy(i.evaluate(s.Condition)) {
+			i.execute(s.Body)
+	}
 	}
 }
 
@@ -125,6 +134,18 @@ func (i *Interpreter) evaluate(e Expr) any {
 			return isEqual(left, right)
 		}
 		panic("unreachable")
+	case *Logical:
+		left := i.evaluate(e.Left)
+		if e.Operator.Type == Or {
+			if isTruthy(left) {
+				return left
+			}
+		} else {
+			if !isTruthy(left) {
+				return left
+			}
+		}
+		return i.evaluate(e.Right)
 	case *Variable:
 		return i.environment.Get(e.Name)
 	case *Assign:
