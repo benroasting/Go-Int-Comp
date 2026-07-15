@@ -13,9 +13,11 @@ type runtimeError struct {
 }
 
 func NewInterpreter(l *Lox) *Interpreter {
+	globals := NewEnvironment()
+	globals.Define("clock", nativeClock{})
 	return &Interpreter{
 		lox:         l,
-		environment: NewEnvironment(),
+		environment: globals,
 	}
 }
 
@@ -146,6 +148,31 @@ func (i *Interpreter) evaluate(e Expr) any {
 			}
 		}
 		return i.evaluate(e.Right)
+	case *Call:
+		callee := i.evaluate(e.Callee)
+
+		var arguments []any
+		for _, arg := range e.Arguments {
+			arguments = append(arguments, i.evaluate(arg))
+		}
+
+		function, ok := callee.(LoxCallable)
+		if !ok {
+			panic(runtimeError{
+				token: e.Paren,
+				message: "Can only call functions and classes.",
+			})
+		}
+
+		if len(arguments) != function.Arity() {
+			panic(runtimeError{
+				token: e.Paren,
+				message: fmt.Sprintf("Expected %d arguments but got %d.",
+							function.Arity(), len(arguments)),
+			})
+		}
+
+		return function.Call(i, arguments)
 	case *Variable:
 		return i.environment.Get(e.Name)
 	case *Assign:

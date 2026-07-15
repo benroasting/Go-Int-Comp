@@ -51,3 +51,11 @@ type Logical struct {
 }
 
 func (*Logical) exprNode() {}
+
+type Call struct {
+	Callee 		Expr
+	Paren		Token
+	Arguments	[]Expr
+}
+
+func (*Call) exprNode() {}
